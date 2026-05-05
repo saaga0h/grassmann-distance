@@ -8,6 +8,8 @@ using Dates
 using JSON3
 using StructTypes
 using KernelAbstractions
+using AMDGPU
+using Mosquitto
 
 # Types first
 include("types.jl")
@@ -33,44 +35,11 @@ include("topology.jl")
 include("serialization.jl")
 include("app.jl")
 
-# CPU-only fallback — overridden by gpu.jl when AMDGPU loads
-function select_backend(use_gpu::Bool)
-    if use_gpu
-        @warn "USE_GPU=true but AMDGPU not available, falling back to CPU"
-    end
-    return CPU()
-end
+# GPU
+include("gpu.jl")
 
-# GPU — only loaded when AMDGPU is available (Singularity runtime on GPU server)
-const HAS_AMDGPU = try
-    @eval using AMDGPU
-    true
-catch e
-    @warn "AMDGPU not available" reason=sprint(showerror, e)
-    false
-end
-
-if HAS_AMDGPU
-    include("gpu.jl")
-end
-
-# MQTT — only loaded when Mosquitto is available (Singularity runtime)
-const HAS_MOSQUITTO = try
-    @eval using Mosquitto
-    true
-catch e
-    @warn "Mosquitto not available" reason=sprint(showerror, e)
-    false
-end
-
-if HAS_MOSQUITTO
-    include("mqtt.jl")
-else
-    function julia_main()::Cint
-        @error "Mosquitto.jl not available — cannot run MQTT worker"
-        return 1
-    end
-end
+# MQTT
+include("mqtt.jl")
 
 export GrassmannConfig, DEFAULT_CONFIG, TangentSpace, RankingEntry,
        knn, estimate_tangent_space, estimate_tangent_spaces,
