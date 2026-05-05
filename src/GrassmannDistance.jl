@@ -33,11 +33,20 @@ include("topology.jl")
 include("serialization.jl")
 include("app.jl")
 
+# CPU-only fallback — overridden by gpu.jl when AMDGPU loads
+function select_backend(use_gpu::Bool)
+    if use_gpu
+        @warn "USE_GPU=true but AMDGPU not available, falling back to CPU"
+    end
+    return CPU()
+end
+
 # GPU — only loaded when AMDGPU is available (Singularity runtime on GPU server)
 const HAS_AMDGPU = try
     @eval using AMDGPU
     true
-catch
+catch e
+    @warn "AMDGPU not available" reason=sprint(showerror, e)
     false
 end
 
@@ -49,12 +58,18 @@ end
 const HAS_MOSQUITTO = try
     @eval using Mosquitto
     true
-catch
+catch e
+    @warn "Mosquitto not available" reason=sprint(showerror, e)
     false
 end
 
 if HAS_MOSQUITTO
     include("mqtt.jl")
+else
+    function julia_main()::Cint
+        @error "Mosquitto.jl not available — cannot run MQTT worker"
+        return 1
+    end
 end
 
 export GrassmannConfig, DEFAULT_CONFIG, TangentSpace, RankingEntry,
@@ -79,6 +94,6 @@ export GrassmannConfig, DEFAULT_CONFIG, TangentSpace, RankingEntry,
        # Serialization
        parse_job, serialize_result, serialize_graph, deserialize_graph,
        # Job processing
-       process_job, load_config
+       process_job, load_config, select_backend
 
 end

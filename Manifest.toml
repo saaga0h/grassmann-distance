@@ -2,7 +2,7 @@
 
 julia_version = "1.12.5"
 manifest_format = "2.0"
-project_hash = "11eeabdb657276478a80cc0fcc73bff6caa5ff6a"
+project_hash = "5541df6ad7d7c1c9aefbafe65bc40985239fa4c0"
 
 [[deps.Adapt]]
 deps = ["LinearAlgebra", "Requires"]
@@ -78,7 +78,7 @@ uuid = "460bff9d-24e4-43bc-9d9f-a8973cb893f4"
 version = "0.1.11"
 
 [[deps.GrassmannDistance]]
-deps = ["Base64", "Dates", "HTTP", "JSON3", "LinearAlgebra", "Serialization", "Statistics", "StructTypes"]
+deps = ["Base64", "Dates", "HTTP", "JSON3", "KernelAbstractions", "LinearAlgebra", "Serialization", "Statistics", "StructTypes"]
 path = "."
 uuid = "1bd7b2b7-7e31-48c4-b72a-92ce0a2ffbfb"
 version = "0.1.0"
@@ -177,6 +177,12 @@ version = "2.28.1010+0"
 [[deps.Mmap]]
 uuid = "a63ad114-7e13-5084-954f-fe012c677804"
 version = "1.11.0"
+
+[[deps.Mosquitto]]
+deps = ["Random", "mosquitto_client_jll"]
+git-tree-sha1 = "87cb622dcd902c4727028e6c2fade003b54919c8"
+uuid = "db317de6-444b-4dfa-9d0e-fbf3d8dd78ea"
+version = "0.10.2"
 
 [[deps.MozillaCACerts_jll]]
 uuid = "14a3606d-f60d-562e-9121-12d972cd8159"
@@ -343,3 +349,9 @@ version = "1.3.1+2"
 deps = ["Artifacts", "Libdl"]
 uuid = "8e850b90-86db-534c-a0d3-1478176c7d93"
 version = "5.15.0+0"
+
+[[deps.mosquitto_client_jll]]
+deps = ["Artifacts", "JLLWrappers", "Libdl", "OpenSSL_jll"]
+git-tree-sha1 = "f0c4209603de57b00afa5fda044a4108b01822ea"
+uuid = "fe4c1bd5-8d44-5fb7-91e7-4554e87d4671"
+version = "2.0.15+0"

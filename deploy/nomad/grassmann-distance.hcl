@@ -54,7 +54,7 @@ job "grassmann-distance" {
 
       # .sif lives on /nfs/images — mounted on the GPU node, no HTTP download
       config {
-        command = "/usr/local/bin/singularity"
+        command = "/usr/bin/singularity"
         args    = [
           "run",
           "--bind", "/opt/rocm:/opt/rocm",
@@ -90,10 +90,6 @@ EOT
       resources {
         cpu    = 2000
         memory = 4096
-
-        device "amd/gpu" {
-          count = 1
-        }
       }
 
       logs {
