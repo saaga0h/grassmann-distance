@@ -1,6 +1,6 @@
 # ── Job processing ───────────────────────────────────────────────────────────
 
-function process_job(payload::AbstractVector{UInt8}, worker_id::String, log_fn)::JobResult
+function process_job(payload::AbstractVector{UInt8}, worker_id::String, log_fn; backend=CPU())::JobResult
     timestamp = Dates.format(Dates.now(Dates.UTC), dateformat"yyyy-mm-ddTHH:MM:SS.sssZ")
 
     params = try
@@ -15,7 +15,7 @@ function process_job(payload::AbstractVector{UInt8}, worker_id::String, log_fn):
 
     try
         if params.mode == "build"
-            return _process_build(params, worker_id, log_fn, timestamp)
+            return _process_build(params, worker_id, log_fn, timestamp; backend=backend)
         elseif params.mode == "query"
             return _process_query(params, worker_id, log_fn, timestamp)
         else
@@ -32,7 +32,8 @@ end
 
 # ── Build mode ───────────────────────────────────────────────────────────────
 
-function _process_build(params::JobParams, worker_id::String, log_fn, timestamp::String)::JobResult
+function _process_build(params::JobParams, worker_id::String, log_fn, timestamp::String;
+                        backend=CPU())::JobResult
     build = params.build
     build !== nothing || return JobResult(params.job_id, false, "build mode requires build params",
                                           nothing, worker_id, timestamp)
@@ -44,7 +45,11 @@ function _process_build(params::JobParams, worker_id::String, log_fn, timestamp:
     embeddings, entity_ids, chunk_map = _prepare_build_inputs(build.entities)
     gc, graph_config = _to_grassmann_config(build.config)
 
-    graph = build_graph(embeddings, entity_ids, chunk_map, gc, graph_config)
+    graph = if backend isa CPU
+        build_graph(embeddings, entity_ids, chunk_map, gc, graph_config)
+    else
+        build_graph_gpu(embeddings, entity_ids, chunk_map, gc, graph_config, backend)
+    end
 
     encoded = serialize_graph(graph)
     log_fn("info", "Graph built: $(length(encoded)) bytes encoded")

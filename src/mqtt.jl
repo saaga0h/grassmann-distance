@@ -8,7 +8,7 @@ function parse_broker_url(url::String)
     return (host, port)
 end
 
-function subscribe_and_process!(config::WorkerConfig)
+function subscribe_and_process!(config::WorkerConfig, backend)
     host, port = parse_broker_url(config.broker_url)
 
     params_topic = "compute/jobs/$(config.job_id)/params"
@@ -45,7 +45,7 @@ function subscribe_and_process!(config::WorkerConfig)
 
     log_fn = (level, msg) -> publish_log!(client, log_topic, config.job_id, level, msg)
 
-    result = process_job(message.payload, config.worker_id, log_fn)
+    result = process_job(message.payload, config.worker_id, log_fn; backend=backend)
 
     result_payload = String(serialize_result(result))
     Mosquitto.publish(client, result_topic, result_payload; qos=1)
@@ -90,7 +90,10 @@ function julia_main()::Cint
         config = load_config()
         log_config(config)
 
-        subscribe_and_process!(config)
+        backend = select_backend(config.use_gpu)
+        @info "Compute backend" backend=backend
+
+        subscribe_and_process!(config, backend)
 
         @info "Worker shutdown complete"
         return 0

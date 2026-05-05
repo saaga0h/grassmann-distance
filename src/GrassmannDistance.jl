@@ -7,6 +7,7 @@ using Base64
 using Dates
 using JSON3
 using StructTypes
+using KernelAbstractions
 
 # Types first
 include("types.jl")
@@ -31,6 +32,18 @@ include("topology.jl")
 # FORGE job layer
 include("serialization.jl")
 include("app.jl")
+
+# GPU — only loaded when AMDGPU is available (Singularity runtime on GPU server)
+const HAS_AMDGPU = try
+    @eval using AMDGPU
+    true
+catch
+    false
+end
+
+if HAS_AMDGPU
+    include("gpu.jl")
+end
 
 # MQTT — only loaded when Mosquitto is available (Singularity runtime)
 const HAS_MOSQUITTO = try
