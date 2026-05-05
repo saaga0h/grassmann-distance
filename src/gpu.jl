@@ -92,12 +92,13 @@ function _gpu_estimate_tangent_spaces(
         d_center = vec(sum(d_neighbors; dims=2)) ./ k
         d_centered = d_neighbors .- d_center
 
-        # SVD on GPU (rocSOLVER for AMD)
-        F = svd(d_centered)
-        h_U = Array(F.U)
+        # Pull to CPU for SVD — rocSOLVER dispatch is unreliable,
+        # and these matrices are small (dim x k) so CPU SVD is fast
+        h_centered = Array(d_centered)
         h_center = Array(d_center)
 
-        spaces[j] = TangentSpace(h_U[:, 1:p], vec(h_center))
+        F = svd(h_centered)
+        spaces[j] = TangentSpace(F.U[:, 1:p], vec(h_center))
     end
 
     return spaces
