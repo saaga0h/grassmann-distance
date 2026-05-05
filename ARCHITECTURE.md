@@ -117,7 +117,7 @@ sequenceDiagram
         app.jl->>paths.jl: find_greedy_path() or find_shortest_path()
         paths.jl->>app.jl: ConceptualPath or nothing
     else reachable
-        app.jl->>paths.jl: reachable(graph, from; max_hops)
+        app.jl->>paths.jl: reachable(graph, from, max_hops)
         paths.jl->>app.jl: Vector{(id, hops, dist)}
     else communities / basins / topology
         app.jl->>topology.jl: communities(), basins(), bridges(), hub_centrality(), hub_concentration()
