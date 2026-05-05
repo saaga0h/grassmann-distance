@@ -12,6 +12,7 @@ using StructTypes
 include("types.jl")
 include("graph_types.jl")
 include("job_types.jl")
+include("config.jl")
 
 # Core logic
 include("neighbors.jl")
@@ -31,6 +32,18 @@ include("topology.jl")
 include("serialization.jl")
 include("app.jl")
 
+# MQTT — only loaded when Mosquitto is available (Singularity runtime)
+const HAS_MOSQUITTO = try
+    @eval using Mosquitto
+    true
+catch
+    false
+end
+
+if HAS_MOSQUITTO
+    include("mqtt.jl")
+end
+
 export GrassmannConfig, DEFAULT_CONFIG, TangentSpace, RankingEntry,
        knn, estimate_tangent_space, estimate_tangent_spaces,
        principal_angles, grassmann_distance,
@@ -49,10 +62,10 @@ export GrassmannConfig, DEFAULT_CONFIG, TangentSpace, RankingEntry,
        EntityInput, GraphConfigInput, BuildParams, QuerySpec, QueryParams,
        JobParams, PathOutput, ReachableEntry, CommunityOutput, BasinOutput,
        BridgeOutput, HubEntry, TopologyOutput, BuildOutput, QueryOutput,
-       JobResult,
+       JobResult, WorkerConfig,
        # Serialization
        parse_job, serialize_result, serialize_graph, deserialize_graph,
        # Job processing
-       process_job
+       process_job, load_config
 
 end
