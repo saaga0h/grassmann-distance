@@ -3,7 +3,6 @@
 *.jl.*.cov
 *.jl.mem
 deps/build.log
-Manifest.toml
 
 # OS
 .DS_Store
