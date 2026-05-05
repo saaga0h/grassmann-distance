@@ -57,6 +57,7 @@ job "grassmann-distance" {
         command = "/usr/bin/singularity"
         args    = [
           "run",
+          "--writable-tmpfs",
           "--bind", "/opt/rocm:/opt/rocm",
           "/nfs/images/grassmann-distance/worker.sif",
         ]
