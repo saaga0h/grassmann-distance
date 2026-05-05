@@ -1,0 +1,53 @@
+# On every push to main: build Singularity image, publish to NFS, register Nomad job.
+#
+# Prerequisites:
+#   - Self-hosted runner named "packer" with singularity on PATH and sudo access
+#   - /nfs/images and /nfs/cache mounted on the packer host
+#   - /nfs/images also mounted on the GPU node (Nomad reads .sif directly from there)
+#   - Gitea repo variables: NOMAD_ADDR
+#
+# Sysimage note:
+#   The container ships without a sysimage. AMDGPU's GCN intrinsics crash Julia's
+#   bundled LLVM during PackageCompiler, so sysimage must be built on the GPU node
+#   where ROCm's LLVM is present. See TODO.md for the post-deploy sysimage step.
+
+name: build
+
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  build:
+    runs-on: packer
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v6
+
+      - name: Build Singularity image
+        run: |
+          # Build scratch must be on local disk — NFS xattrs break fakeroot unpacking
+          BUILD_TMPDIR="/var/tmp/singularity-build-$$"
+          mkdir -p "$BUILD_TMPDIR"
+          SINGULARITY_TMPDIR="$BUILD_TMPDIR" singularity build --fakeroot worker.sif singularity.def
+          rm -rf "$BUILD_TMPDIR"
+
+      - name: Publish artifact
+        run: |
+          DEST="/nfs/images/grassmann-distance"
+          mkdir -p "$DEST"
+          mv worker.sif "$DEST/worker.sif"
+          cat > "$DEST/manifest.json" <<EOF
+          {
+            "git_commit": "${{ github.sha }}",
+            "built_at": "$(date -u +%Y-%m-%dT%H:%M:%SZ)"
+          }
+          EOF
+
+      - name: Register Nomad job
+        env:
+          NOMAD_ADDR: ${{ vars.NOMAD_ADDR }}
+        run: |
+          nomad job run deploy/nomad/grassmann-distance.hcl
