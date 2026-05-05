@@ -175,7 +175,10 @@ function _gini_concentration(degrees::Vector{Int})
     n = length(sorted)
     total = sum(sorted)
     total == 0 && return 0.0
-    cumulative = cumsum(sorted) ./ total
-    area = sum(cumulative) / n
-    return 1.0 - 2.0 * area
+    # Standard Gini coefficient: sum of |xi - xj| / (2 * n * mean)
+    numerator = 0.0
+    for i in 1:n, j in 1:n
+        numerator += abs(sorted[i] - sorted[j])
+    end
+    return numerator / (2 * n * total)
 end

@@ -23,4 +23,10 @@ using GrassmannDistance
     @testset "Topology" begin
         include("test_topology.jl")
     end
+    @testset "Serialization" begin
+        include("test_serialization.jl")
+    end
+    @testset "App" begin
+        include("test_app.jl")
+    end
 end

@@ -2,10 +2,16 @@ module GrassmannDistance
 
 using LinearAlgebra
 using Statistics
+using Serialization
+using Base64
+using Dates
+using JSON3
+using StructTypes
 
 # Types first
 include("types.jl")
 include("graph_types.jl")
+include("job_types.jl")
 
 # Core logic
 include("neighbors.jl")
@@ -21,6 +27,10 @@ include("graph.jl")
 include("paths.jl")
 include("topology.jl")
 
+# FORGE job layer
+include("serialization.jl")
+include("app.jl")
+
 export GrassmannConfig, DEFAULT_CONFIG, TangentSpace, RankingEntry,
        knn, estimate_tangent_space, estimate_tangent_spaces,
        principal_angles, grassmann_distance,
@@ -34,6 +44,15 @@ export GrassmannConfig, DEFAULT_CONFIG, TangentSpace, RankingEntry,
        find_greedy_path, find_shortest_path, reachable,
        # Topology analysis
        communities, basins, bridges, hub_centrality, hub_concentration,
-       bidirectional_edges
+       bidirectional_edges,
+       # Job types
+       EntityInput, GraphConfigInput, BuildParams, QuerySpec, QueryParams,
+       JobParams, PathOutput, ReachableEntry, CommunityOutput, BasinOutput,
+       BridgeOutput, HubEntry, TopologyOutput, BuildOutput, QueryOutput,
+       JobResult,
+       # Serialization
+       parse_job, serialize_result, serialize_graph, deserialize_graph,
+       # Job processing
+       process_job
 
 end
