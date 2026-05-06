@@ -6,6 +6,11 @@
 JIT-compiles on every cold start (~30s). Acceptable for now since this is a
 batch job and startup time is not critical.
 
+**Deferred until GPU server rebuild**: korok needs significantly more local disk
+for Singularity scratch and growing model storage before a sysimage build is
+practical. The build takes 20-30 min and must be redone after significant code
+changes, so doing it on a stable server makes more sense.
+
 **Why it's skipped**: PackageCompiler uses Julia's bundled LLVM to compile the
 sysimage. AMDGPU.jl injects AMD GCN bitcode (`amdgcn` intrinsics) into that
 pipeline. Julia's generic LLVM can't handle GCN intrinsics and aborts with
