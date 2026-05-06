@@ -45,6 +45,23 @@ Steps:
    one-off Nomad job to rebuild the sysimage on the GPU node after each image
    publish. The sysimage job can write directly to `/nfs/images/grassmann-distance/`.
 
+## Dimensionality crossover — GD vs cosine discrimination
+
+qwen3-embedding supports MRL (Matryoshka Representation Learning), so we can
+get 768D, 1024D, and 4096D embeddings for the same corpus without re-embedding.
+Test whether Grassmann distance still outperforms cosine at lower dimensions,
+and find the crossover point (if any) where cosine concentration-of-measure
+problems disappear and GD stops adding value.
+
+Test plan (via grassmann-bench):
+1. Embed foodCorpus at 768D, 1024D, 4096D using qwen3-embedding MRL truncation
+2. Build Grassmann graphs at each dimensionality (same k, p parameters)
+3. Compare hub concentration, path divergence, community structure across dims
+4. Check if cosine topology improves enough at 768D/1024D to close the gap
+
+This matters for practical deployment — if GD only wins at high dimensions,
+users with 768D embeddings (the common case) don't benefit.
+
 ## REPL Experiments
 
 ### Grassmann distance for complementarity
