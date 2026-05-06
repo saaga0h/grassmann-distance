@@ -151,11 +151,12 @@ EOF
       }
 
       env {
-        JOB_ID            = "${NOMAD_META_job_id}"
-        WORKER_ID         = "nomad-${NOMAD_ALLOC_ID}"
-        USE_GPU           = "true"
-        JULIA_NUM_THREADS = "1"
-        ROCM_PATH         = "/opt/rocm"
+        JOB_ID              = "${NOMAD_META_job_id}"
+        WORKER_ID           = "nomad-${NOMAD_ALLOC_ID}"
+        USE_GPU             = "true"
+        JULIA_NUM_THREADS   = "4"
+        OPENBLAS_NUM_THREADS = "1"
+        ROCM_PATH           = "/opt/rocm"
       }
 
       # Secrets from Vault — shared forge policy
@@ -176,8 +177,8 @@ EOT
       }
 
       resources {
-        cpu    = 2000
-        memory = 4096
+        cpu    = 8000
+        memory = 8192
       }
 
       logs {
