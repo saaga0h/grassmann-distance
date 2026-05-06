@@ -91,6 +91,8 @@ function _gpu_estimate_tangent_spaces(
             F           = svd(h_neighbors)
             spaces[j]   = TangentSpace(F.U[:, 1:p], center)
         end
+        AMDGPU.synchronize()
+        GC.gc(false)
     end
 
     return spaces
@@ -250,9 +252,11 @@ function build_graph_gpu(
 
     @info "GPU: computing all-pairs kNN" chunks=n_chunks k=grassmann_config.k
     knn_matrix = _gpu_all_knn(emb, grassmann_config.k, backend)
+    AMDGPU.synchronize(); GC.gc()
 
     @info "GPU: estimating tangent spaces" chunks=n_chunks p=grassmann_config.p threads=Threads.nthreads()
     ts = _gpu_estimate_tangent_spaces(emb, knn_matrix, grassmann_config.p, backend)
+    AMDGPU.synchronize(); GC.gc()
 
     @info "GPU: computing entity distance matrix" entities=n_entities pair_batches=cld(n_entities*(n_entities-1)÷2*graph_config.max_chunks^2, ENTITY_PAIR_BATCH)
     dist_matrix = _gpu_entity_distance_matrix(ts, entities, grassmann_config, graph_config, backend)
