@@ -35,6 +35,8 @@ job "grassmann-distance" {
   group "worker" {
     count = 1
 
+    stop_after_client_disconnect = "30s"
+
     restart {
       attempts = 0
       mode     = "fail"
@@ -47,6 +49,91 @@ job "grassmann-distance" {
 
     network {
       mode = "host"
+    }
+
+    task "vector" {
+      driver = "raw_exec"
+
+      lifecycle {
+        hook    = "poststart"
+        sidecar = true
+      }
+
+      config {
+        command = "/bin/sh"
+        args    = ["-c", "mkdir -p ${NOMAD_ALLOC_DIR}/vector && exec /usr/local/bin/vector --config ${NOMAD_TASK_DIR}/vector.yaml"]
+      }
+
+      template {
+        destination     = "local/vector.yaml"
+        left_delimiter  = "[["
+        right_delimiter = "]]"
+        data            = <<EOF
+data_dir: "${NOMAD_ALLOC_DIR}/vector"
+
+sources:
+  logs:
+    type: "file"
+    include: ["${NOMAD_ALLOC_DIR}/logs/*.std*.0"]
+    read_from: "beginning"
+
+transforms:
+  enrich:
+    type: "remap"
+    inputs: ["logs"]
+    source: |
+      .job      = "grassmann-distance"
+      .alloc_id = "${NOMAD_ALLOC_ID}"
+      .cluster  = "the-collective"
+      .job_id   = "${NOMAD_META_job_id}"
+
+      path_parts = split!(string!(.file), "/")
+      filename   = string!(path_parts[-1])
+      name_parts = split!(filename, ".")
+      .task      = name_parts[0]
+
+      parsed, err = parse_json(.message)
+      if err == null {
+        .level = string(parsed.level) ?? "info"
+      } else {
+        .level = "info"
+      }
+
+sinks:
+  loki:
+    type: "loki"
+    inputs: ["enrich"]
+    endpoint: "[[ with secret "secret/data/nomad/forge" ]][[ .Data.data.LOKI_ENDPOINT ]][[ end ]]"
+    tenant_id: "default"
+    healthcheck:
+      enabled: false
+    encoding:
+      codec: "text"
+    labels:
+      job:      "{{ job }}"
+      task:     "{{ task }}"
+      alloc_id: "{{ alloc_id }}"
+      job_id:   "{{ job_id }}"
+      cluster:  "the-collective"
+      level:    "{{ level }}"
+    compression: "gzip"
+    batch:
+      max_bytes: 1024000
+      timeout_secs: 5
+    buffer:
+      type: "memory"
+      max_events: 10000
+EOF
+      }
+
+      vault {
+        policies = ["forge"]
+      }
+
+      resources {
+        cpu    = 50
+        memory = 64
+      }
     }
 
     task "worker" {
