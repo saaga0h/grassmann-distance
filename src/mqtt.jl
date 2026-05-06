@@ -42,6 +42,7 @@ function subscribe_and_process!(config::WorkerConfig, backend)
     end
 
     publish_status!(client, status_topic, config, "processing")
+    Mosquitto.loop(client; timeout=200, ntimes=5)
 
     log_fn = (level, msg) -> publish_log!(client, log_topic, config.job_id, level, msg)
 
@@ -54,6 +55,9 @@ function subscribe_and_process!(config::WorkerConfig, backend)
     publish_status!(client, status_topic, config, status)
 
     @info "Job processing complete" success=result.success
+    # Flush outgoing queue — without loop, publishes sit in libmosquitto's buffer
+    # and are dropped when disconnect closes the socket.
+    Mosquitto.loop(client; timeout=500, ntimes=20)
     Mosquitto.disconnect(client)
 end
 
