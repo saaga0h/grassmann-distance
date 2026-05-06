@@ -14,7 +14,7 @@
 #                        at 4096D p=2: ~6.4 GB per batch
 
 const TANGENT_BATCH_SIZE = 2_000
-const ENTITY_PAIR_BATCH  = 50_000
+const ENTITY_PAIR_BATCH  = 20_000
 
 # ── Backend selection ─────────────────────────────────────────────────────────
 
@@ -179,6 +179,8 @@ function _gpu_entity_distance_matrix(
             pair_sum[ei, ej]   += dists[idx]
             pair_count[ei, ej] += 1
         end
+        AMDGPU.synchronize()
+        GC.gc(false)
     end
 
     # Average and symmetrize
