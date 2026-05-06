@@ -42,17 +42,40 @@ end
 # ── Graph binary serialization ───────────────────────────────────────────────
 # Opaque blob for the client — Julia writes it, Julia reads it.
 # Travels through FORGE as base64-encoded string in JSON payloads.
+#
+# Only query-relevant fields are serialized. embeddings (dim × n_chunks) and
+# tangent_spaces (n_chunks × (dim × p + dim)) account for ~87 MB at 4096D /
+# 691 chunks and are never accessed during query mode. Omitting them reduces
+# the blob from ~115 MB to ~100 KB for a typical corpus.
 
 function serialize_graph(graph::GrassmannGraph)::String
+    slim = (
+        entities         = graph.entities,
+        entity_index     = graph.entity_index,
+        distance_matrix  = graph.distance_matrix,
+        neighbors        = graph.neighbors,
+        grassmann_config = graph.grassmann_config,
+        graph_config     = graph.graph_config,
+    )
     io = IOBuffer()
-    Serialization.serialize(io, graph)
+    Serialization.serialize(io, slim)
     return Base64.base64encode(take!(io))
 end
 
 function deserialize_graph(encoded::AbstractString)::GrassmannGraph
     bytes = Base64.base64decode(encoded)
-    io = IOBuffer(bytes)
-    return Serialization.deserialize(io)::GrassmannGraph
+    io    = IOBuffer(bytes)
+    slim  = Serialization.deserialize(io)
+    return GrassmannGraph(
+        slim.entities,
+        slim.entity_index,
+        Matrix{Float64}(undef, 0, 0),   # embeddings — not needed for queries
+        TangentSpace[],                  # tangent_spaces — not needed for queries
+        slim.distance_matrix,
+        slim.neighbors,
+        slim.grassmann_config,
+        slim.graph_config,
+    )
 end
 
 # ── Config conversion ───────────────────────────────────────────────────────
